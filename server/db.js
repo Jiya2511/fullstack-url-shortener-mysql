@@ -1,24 +1,20 @@
-// server/db.js (FINAL POSTGRESQL VERSION)
+// server/db.js (ULTIMATE FINAL POSTGRESQL VERSION)
 const { Pool } = require('pg'); 
 require('dotenv').config();
 
-// Use DATABASE_URL for Render deployment, or local variables as a fallback
-const connectionString = process.env.DATABASE_URL || 
-                         `postgres://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:5432/${process.env.DB_NAME}`;
-
-// Define the connection configuration object
+// Configuration relies entirely on the DATABASE_URL environment variable provided by Render.
 const config = {
-    connectionString: connectionString,
+    connectionString: process.env.DATABASE_URL,
 };
 
-// CRUCIAL: If the app is running on a live platform (not localhost), enforce SSL
-// Render provides the DATABASE_URL, which signifies a production environment.
+// CRUCIAL: Add SSL configuration only if a DATABASE_URL is present (i.e., deployed on Render)
 if (process.env.DATABASE_URL) {
     config.ssl = {
-        rejectUnauthorized: false // This bypasses strict certificate checking, often necessary on hosting platforms
+        rejectUnauthorized: false // Necessary to bypass Render's custom certificate checks
     };
 }
 
+// NOTE: If DATABASE_URL is missing, this will fail immediately, preventing local fallback issues.
 const pool = new Pool(config);
 
 module.exports = pool;
