@@ -3,13 +3,14 @@
 // --- 1. Imports and Setup ---
 const express = require('express');
 const cors = require('cors');
-const pool = require('./db'); // Database connection pool (must be created)
-const generateShortCode = require('./utils/shortCodeGenerator'); // Must be created
+// NOTE: 'pool' now uses the 'pg' driver instead of 'mysql2'
+const pool = require('./db'); 
+const generateShortCode = require('./utils/shortCodeGenerator'); 
 
 // Authentication and Security Imports
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const auth = require('./middleware/auth'); // NEW: Import the auth middleware
+const auth = require('./middleware/auth'); 
 
 require('dotenv').config();
 
@@ -20,13 +21,13 @@ app.use(express.json()); // Allows parsing of JSON request bodies
 
 // --- 2. Authentication Routes (Registration and Login) ---
 
-// Register User (Your provided code - No changes needed here)
+// Register User
 app.post('/api/register', async (req, res) => {
     const { username, password } = req.body;
     try {
-        // 1. Check if user already exists
-        const [existingUsers] = await pool.execute('SELECT id FROM users WHERE username = ?', [username]);
-        if (existingUsers.length > 0) {
+        // 1. Check if user already exists (PostgreSQL syntax: $1)
+        const existingUsers = await pool.query('SELECT id FROM users WHERE username = $1', [username]);
+        if (existingUsers.rows.length > 0) { // NOTE: pg returns result in rows property
             return res.status(400).json({ message: 'User already exists' });
         }
 
@@ -34,9 +35,9 @@ app.post('/api/register', async (req, res) => {
         const salt = await bcrypt.genSalt(10);
         const password_hash = await bcrypt.hash(password, salt);
 
-        // 3. Save new user
-        await pool.execute(
-            'INSERT INTO users (username, password_hash) VALUES (?, ?)',
+        // 3. Save new user (PostgreSQL syntax: $1, $2)
+        await pool.query(
+            'INSERT INTO users (username, password_hash) VALUES ($1, $2)',
             [username, password_hash]
         );
 
@@ -47,16 +48,17 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-// Login User (Included for completeness)
+// Login User
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
-        const [users] = await pool.execute('SELECT id, password_hash FROM users WHERE username = ?', [username]);
-        if (users.length === 0) {
+        // Find user (PostgreSQL syntax: $1)
+        const users = await pool.query('SELECT id, password_hash FROM users WHERE username = $1', [username]);
+        if (users.rows.length === 0) {
             return res.status(400).json({ message: 'Invalid Credentials' });
         }
 
-        const user = users[0];
+        const user = users.rows[0]; // NOTE: Access data via .rows[0]
         const isMatch = await bcrypt.compare(password, user.password_hash);
         if (!isMatch) {
             return res.status(400).json({ message: 'Invalid Credentials' });
@@ -83,10 +85,9 @@ app.post('/api/login', async (req, res) => {
 // --- 3. Core API Routes (Protected and Personalized Endpoints) ---
 
 // 3.1. Shorten Link Endpoint 
-// MODIFIED: Added 'auth' middleware and 'user_id' insertion
-app.post('/api/shorten', auth, async (req, res) => { // ⬅️ Route is now protected
+app.post('/api/shorten', auth, async (req, res) => { 
     const { longUrl } = req.body;
-    const userId = req.user.id; // ⬅️ Get user ID from the token payload
+    const userId = req.user.id; 
 
     if (!longUrl) {
         return res.status(400).json({ message: 'URL is required.' });
@@ -95,10 +96,10 @@ app.post('/api/shorten', auth, async (req, res) => { // ⬅️ Route is now prot
     try {
         const shortCode = generateShortCode();
 
-        // SQL CHANGE: Inserting the user_id
-        await pool.execute(
-            'INSERT INTO links (short_code, long_url, user_id) VALUES (?, ?, ?)',
-            [shortCode, longUrl, userId] // Pass the userId here
+        // SQL CHANGE: Inserting the user_id (PostgreSQL syntax: $1, $2, $3)
+        await pool.query(
+            'INSERT INTO links (short_code, long_url, user_id) VALUES ($1, $2, $3)',
+            [shortCode, longUrl, userId] 
         );
 
         res.status(201).json({ 
@@ -114,17 +115,16 @@ app.post('/api/shorten', auth, async (req, res) => { // ⬅️ Route is now prot
 
 
 // 3.2. Get All Links Endpoint (Dashboard Data)
-// MODIFIED: Added 'auth' middleware and 'user_id' filtering
-app.get('/api/links', auth, async (req, res) => { // ⬅️ Route is now protected
-    const userId = req.user.id; // ⬅️ Get user ID from the token payload
+app.get('/api/links', auth, async (req, res) => { 
+    const userId = req.user.id; 
 
     try {
-        // SQL CHANGE: Using WHERE clause to filter by user_id
-        const [links] = await pool.execute(
-            'SELECT short_code, long_url, click_count FROM links WHERE user_id = ? ORDER BY created_at DESC',
-            [userId] // Pass the userId to the query
+        // SQL CHANGE: Using WHERE clause to filter by user_id (PostgreSQL syntax: $1)
+        const links = await pool.query(
+            'SELECT short_code, long_url, click_count FROM links WHERE user_id = $1 ORDER BY created_at DESC',
+            [userId] 
         );
-        res.json(links);
+        res.json(links.rows); // NOTE: Return data via .rows
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error fetching links.' });
@@ -135,26 +135,25 @@ app.get('/api/links', auth, async (req, res) => { // ⬅️ Route is now protect
 // --- 4. Redirect Route (Generic Endpoint - MUST BE LAST) ---
 
 // 4.1. Redirect and Analytics Endpoint 
-// This route remains public and does NOT use the 'auth' middleware
 app.get('/:shortCode', async (req, res) => {
     const { shortCode } = req.params;
 
     try {
-        // 1. Find the link
-        const [links] = await pool.execute(
-            'SELECT long_url FROM links WHERE short_code = ?',
+        // 1. Find the link (PostgreSQL syntax: $1)
+        const links = await pool.query(
+            'SELECT long_url FROM links WHERE short_code = $1',
             [shortCode]
         );
 
-        if (links.length === 0) {
+        if (links.rows.length === 0) {
             return res.status(404).send('URL not found.');
         }
 
-        const longUrl = links[0].long_url;
+        const longUrl = links.rows[0].long_url;
 
-        // 2. Increment the click count (Analytics)
-        await pool.execute(
-            'UPDATE links SET click_count = click_count + 1 WHERE short_code = ?',
+        // 2. Increment the click count (Analytics - PostgreSQL syntax: $1)
+        await pool.query(
+            'UPDATE links SET click_count = click_count + 1 WHERE short_code = $1',
             [shortCode]
         );
 
