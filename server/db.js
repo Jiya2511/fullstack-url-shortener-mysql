@@ -1,19 +1,4 @@
-// server/db.js
-// const mysql = require('mysql2/promise');
-// require('dotenv').config();
-
-// const pool = mysql.createPool({
-//     host: process.env.DB_HOST,
-//     user: process.env.DB_USER,
-//     password: process.env.DB_PASSWORD,
-//     database: process.env.DB_NAME,
-//     waitForConnections: true,
-//     connectionLimit: 10,
-//     queueLimit: 0
-// });
-
-// module.exports = pool;
-// server/db.js (UPDATED for PostgreSQL)
+// server/db.js (FINAL POSTGRESQL VERSION)
 const { Pool } = require('pg'); 
 require('dotenv').config();
 
@@ -21,10 +6,19 @@ require('dotenv').config();
 const connectionString = process.env.DATABASE_URL || 
                          `postgres://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:5432/${process.env.DB_NAME}`;
 
-const pool = new Pool({
+// Define the connection configuration object
+const config = {
     connectionString: connectionString,
-    // Optional: Add SSL configuration for external connections if needed, but Render often handles this internally.
-    // ssl: { rejectUnauthorized: false } 
-});
+};
+
+// CRUCIAL: If the app is running on a live platform (not localhost), enforce SSL
+// Render provides the DATABASE_URL, which signifies a production environment.
+if (process.env.DATABASE_URL) {
+    config.ssl = {
+        rejectUnauthorized: false // This bypasses strict certificate checking, often necessary on hosting platforms
+    };
+}
+
+const pool = new Pool(config);
 
 module.exports = pool;
