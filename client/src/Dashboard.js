@@ -3,37 +3,29 @@ import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios'; 
 import './App.css'; 
 
-// Define API constants (ensure these match your server location)
-// --- Confirmed Live Render URL ---
 const API_BASE = 'https://fullstack-url-shortener-mysql.onrender.com/api'; 
 const REDIRECT_BASE = 'https://fullstack-url-shortener-mysql.onrender.com'; 
 
-// This component receives 'token' and 'onLogout' from App.js
 function Dashboard({ token, onLogout }) {
-    // Initialize State Variables
     const [longUrl, setLongUrl] = useState('');
     const [shortLink, setShortLink] = useState('');
     const [links, setLinks] = useState([]); 
     const [message, setMessage] = useState('');
     
-    // Memoize fetchLinks function using useCallback
     const fetchLinks = useCallback(async () => {
         try {
-            // Sends the JWT token in the header for authentication
             const response = await axios.get(`${API_BASE}/links`, {
                 headers: { 'x-auth-token': token } 
             }); 
             setLinks(response.data);
         } catch (err) {
             console.error("Failed to fetch links", err);
-            // If the server returns 401 (Unauthorized), log the user out
             if (err.response && err.response.status === 401) {
                 onLogout(); 
             }
         }
     }, [token, onLogout, setLinks]); 
 
-    // Fetch links on component mount and whenever the token or fetchLinks function changes
     useEffect(() => {
         fetchLinks();
     }, [fetchLinks]); 
@@ -44,23 +36,20 @@ function Dashboard({ token, onLogout }) {
         setMessage('');
 
         try {
-            // Sends the JWT token for authentication
             const response = await axios.post(`${API_BASE}/shorten`, { longUrl }, {
                 headers: { 'x-auth-token': token } 
             });
             setShortLink(`${REDIRECT_BASE}/${response.data.shortCode}`);
             setMessage('Success! Your link is shortened.');
             setLongUrl('');
-            fetchLinks(); // Refresh the list
+            fetchLinks();
         } catch (err) {
-            // Display specific error message from the server if available
             setMessage(err.response?.data?.message || 'Error shortening URL.');
         }
     };
 
     return (
         <div className="dashboard-content">
-            {/* Shortening Form Section (Styled with card-box) */}
             <div className="card-box"> 
                 <h2>Shorten a New Link</h2>
                 <form onSubmit={handleSubmit} className="shorten-form-box">
@@ -83,7 +72,6 @@ function Dashboard({ token, onLogout }) {
                 )}
             </div>
 
-            {/* Link Table Section (Styled with card-box) */}
             <div className="card-box">
                 <h2>My Links ({links.length})</h2>
                 <table>

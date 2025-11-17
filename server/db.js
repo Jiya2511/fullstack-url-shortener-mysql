@@ -14,7 +14,6 @@ if (process.env.DATABASE_URL) {
     };
 }
 
-// NOTE: If DATABASE_URL is missing, this will fail immediately, preventing local fallback issues.
 const pool = new Pool(config);
 
 module.exports = pool;

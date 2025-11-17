@@ -1,34 +1,32 @@
 // server/server.js
-
-// --- 1. Imports and Setup ---
 const express = require('express');
 const cors = require('cors');
-// NOTE: 'pool' now uses the 'pg' driver instead of 'mysql2'
 const pool = require('./db'); 
 const generateShortCode = require('./utils/shortCodeGenerator'); 
 
 // Authentication and Security Imports
-// TO THIS:
-const bcrypt = require('bcryptjs');
+const bcrypt = require('bcryptjs'); // FIX: Using bcryptjs
 const jwt = require('jsonwebtoken');
 const auth = require('./middleware/auth'); 
 
 require('dotenv').config();
 
 const app = express();
-app.use(cors());
-app.use(express.json()); // Allows parsing of JSON request bodies
+
+// FIX: Set CORS origin to * to allow connections from the Vercel frontend
+app.use(cors({ origin: '*' })); 
+app.use(express.json());
 
 
 // --- 2. Authentication Routes (Registration and Login) ---
 
-// Register User
+// Register User (PostgreSQL syntax: $1, $2)
 app.post('/api/register', async (req, res) => {
     const { username, password } = req.body;
     try {
         // 1. Check if user already exists (PostgreSQL syntax: $1)
         const existingUsers = await pool.query('SELECT id FROM users WHERE username = $1', [username]);
-        if (existingUsers.rows.length > 0) { // NOTE: pg returns result in rows property
+        if (existingUsers.rows.length > 0) {
             return res.status(400).json({ message: 'User already exists' });
         }
 
@@ -44,22 +42,21 @@ app.post('/api/register', async (req, res) => {
 
         res.status(201).json({ message: 'User registered successfully' });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server error during registration' });
+        console.error("Registration Crash:", error);
+        res.status(500).json({ message: 'Server error during registration.' });
     }
 });
 
-// Login User
+// Login User (PostgreSQL syntax: $1)
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
-        // Find user (PostgreSQL syntax: $1)
         const users = await pool.query('SELECT id, password_hash FROM users WHERE username = $1', [username]);
         if (users.rows.length === 0) {
             return res.status(400).json({ message: 'Invalid Credentials' });
         }
 
-        const user = users.rows[0]; // NOTE: Access data via .rows[0]
+        const user = users.rows[0];
         const isMatch = await bcrypt.compare(password, user.password_hash);
         if (!isMatch) {
             return res.status(400).json({ message: 'Invalid Credentials' });
@@ -77,8 +74,8 @@ app.post('/api/login', async (req, res) => {
             }
         );
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ message: 'Server error during login' });
+        console.error("Login Crash:", error);
+        res.status(500).json({ message: 'Server error during login.' });
     }
 });
 
@@ -125,7 +122,7 @@ app.get('/api/links', auth, async (req, res) => {
             'SELECT short_code, long_url, click_count FROM links WHERE user_id = $1 ORDER BY created_at DESC',
             [userId] 
         );
-        res.json(links.rows); // NOTE: Return data via .rows
+        res.json(links.rows); 
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error fetching links.' });

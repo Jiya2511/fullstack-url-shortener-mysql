@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-// --- Confirmed Live Render URL ---
 const API_BASE = 'https://fullstack-url-shortener-mysql.onrender.com/api'; 
 const REDIRECT_BASE = 'https://fullstack-url-shortener-mysql.onrender.com';
 
@@ -25,7 +24,6 @@ function Auth({ view, setView, onLogin }) {
                 setView('login');
             }
         } catch (err) {
-            // Display specific error message from the server if available
             setMessage(err.response?.data?.message || `Error during ${endpoint}`);
         }
     };
