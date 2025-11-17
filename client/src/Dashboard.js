@@ -4,7 +4,7 @@ import axios from 'axios';
 import './App.css'; 
 
 // Define API constants (ensure these match your server location)
-// Update the API_BASE and REDIRECT_BASE constants in both files:
+// --- Confirmed Live Render URL ---
 const API_BASE = 'https://fullstack-url-shortener-mysql.onrender.com/api'; 
 const REDIRECT_BASE = 'https://fullstack-url-shortener-mysql.onrender.com'; 
 

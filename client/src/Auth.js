@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-// Update the API_BASE and REDIRECT_BASE constants in both files:
+// --- Confirmed Live Render URL ---
 const API_BASE = 'https://fullstack-url-shortener-mysql.onrender.com/api'; 
 const REDIRECT_BASE = 'https://fullstack-url-shortener-mysql.onrender.com';
 
@@ -19,7 +19,7 @@ function Auth({ view, setView, onLogin }) {
             const response = await axios.post(`${API_BASE}/${endpoint}`, { username, password });
             
             if (endpoint === 'login') {
-                onLogin(response.data.token); // Call parent login handler
+                onLogin(response.data.token); 
             } else { // Register
                 setMessage('Registration successful! Please log in.');
                 setView('login');
@@ -33,7 +33,6 @@ function Auth({ view, setView, onLogin }) {
     const isLogin = view === 'login';
 
     return (
-        // MODIFIED: Added card-box class here for the white background and shadow 
         <div className="auth-container card-box"> 
             <h2>{isLogin ? 'Log In' : 'Register'}</h2>
             
