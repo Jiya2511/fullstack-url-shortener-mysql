@@ -4,8 +4,9 @@ import axios from 'axios';
 import './App.css'; 
 
 // Define API constants (ensure these match your server location)
-const API_BASE = 'http://localhost:5000/api';
-const REDIRECT_BASE = 'http://localhost:5000'; 
+// Update the API_BASE and REDIRECT_BASE constants in both files:
+const API_BASE = 'https://fullstack-url-shortener-mysql.onrender.com/api'; 
+const REDIRECT_BASE = 'https://fullstack-url-shortener-mysql.onrender.com'; 
 
 // This component receives 'token' and 'onLogout' from App.js
 function Dashboard({ token, onLogout }) {

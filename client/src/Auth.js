@@ -2,7 +2,9 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
-const API_BASE = 'http://localhost:5000/api';
+// Update the API_BASE and REDIRECT_BASE constants in both files:
+const API_BASE = 'https://fullstack-url-shortener-mysql.onrender.com/api'; 
+const REDIRECT_BASE = 'https://fullstack-url-shortener-mysql.onrender.com';
 
 function Auth({ view, setView, onLogin }) {
     const [username, setUsername] = useState('');
