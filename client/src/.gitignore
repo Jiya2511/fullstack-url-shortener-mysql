@@ -1,0 +1,9 @@
+# Dependency folders
+node_modules
+
+# Build folders
+/client/build
+
+# Environment Variables (CRITICAL SECRETS)
+.env
+/server/.env
