@@ -8,7 +8,8 @@ const pool = require('./db');
 const generateShortCode = require('./utils/shortCodeGenerator'); 
 
 // Authentication and Security Imports
-const bcrypt = require('bcrypt');
+// TO THIS:
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const auth = require('./middleware/auth'); 
 
