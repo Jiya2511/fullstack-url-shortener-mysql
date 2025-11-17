@@ -1,11 +1,11 @@
-// server/server.js
+// server/server.js (FINAL CORRECTED POSTGRESQL CODE)
 const express = require('express');
 const cors = require('cors');
 const pool = require('./db'); 
 const generateShortCode = require('./utils/shortCodeGenerator'); 
 
 // Authentication and Security Imports
-const bcrypt = require('bcryptjs'); // FIX: Using bcryptjs
+const bcrypt = require('bcryptjs'); 
 const jwt = require('jsonwebtoken');
 const auth = require('./middleware/auth'); 
 
@@ -13,7 +13,7 @@ require('dotenv').config();
 
 const app = express();
 
-// FIX: Set CORS origin to * to allow connections from the Vercel frontend
+// Set CORS origin to * to allow connections from the Vercel frontend
 app.use(cors({ origin: '*' })); 
 app.use(express.json());
 
@@ -26,7 +26,9 @@ app.post('/api/register', async (req, res) => {
     try {
         // 1. Check if user already exists (PostgreSQL syntax: $1)
         const existingUsers = await pool.query('SELECT id FROM users WHERE username = $1', [username]);
-        if (existingUsers.rows.length > 0) {
+        
+        // CORRECTION: Check the .rows property for length
+        if (existingUsers.rows.length > 0) { 
             return res.status(400).json({ message: 'User already exists' });
         }
 
@@ -52,11 +54,15 @@ app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
         const users = await pool.query('SELECT id, password_hash FROM users WHERE username = $1', [username]);
+        
+        // CORRECTION: Check the .rows property for length
         if (users.rows.length === 0) {
             return res.status(400).json({ message: 'Invalid Credentials' });
         }
 
-        const user = users.rows[0];
+        // CORRECTION: Access user data via .rows[0]
+        const user = users.rows[0]; 
+        
         const isMatch = await bcrypt.compare(password, user.password_hash);
         if (!isMatch) {
             return res.status(400).json({ message: 'Invalid Credentials' });
