@@ -180,6 +180,6 @@ tr:hover {
 }
 
 td a {
-    color: #FF0000; /* Make short codes red */
+    color: #FF0000; 
     text-decoration: none;
 }

@@ -1,4 +1,4 @@
-// client/src/Auth.js
+
 import React, { useState } from 'react';
 import axios from 'axios';
 
@@ -19,7 +19,7 @@ function Auth({ view, setView, onLogin }) {
             
             if (endpoint === 'login') {
                 onLogin(response.data.token); 
-            } else { // Register
+            } else {
                 setMessage('Registration successful! Please log in.');
                 setView('login');
             }

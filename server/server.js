@@ -1,10 +1,10 @@
-// server/server.js (FINAL CORRECTED POSTGRESQL CODE)
+
 const express = require('express');
 const cors = require('cors');
 const pool = require('./db'); 
 const generateShortCode = require('./utils/shortCodeGenerator'); 
 
-// Authentication and Security Imports
+
 const bcrypt = require('bcryptjs'); 
 const jwt = require('jsonwebtoken');
 const auth = require('./middleware/auth'); 
@@ -13,30 +13,28 @@ require('dotenv').config();
 
 const app = express();
 
-// Set CORS origin to * to allow connections from the Vercel frontend
 app.use(cors({ origin: '*' })); 
 app.use(express.json());
 
 
-// --- 2. Authentication Routes (Registration and Login) ---
 
-// Register User (PostgreSQL syntax: $1, $2)
+
 app.post('/api/register', async (req, res) => {
     const { username, password } = req.body;
     try {
-        // 1. Check if user already exists (PostgreSQL syntax: $1)
+        
         const existingUsers = await pool.query('SELECT id FROM users WHERE username = $1', [username]);
         
-        // CORRECTION: Check the .rows property for length
+        
         if (existingUsers.rows.length > 0) { 
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        // 2. Hash password
+    
         const salt = await bcrypt.genSalt(10);
         const password_hash = await bcrypt.hash(password, salt);
 
-        // 3. Save new user (PostgreSQL syntax: $1, $2)
+
         await pool.query(
             'INSERT INTO users (username, password_hash) VALUES ($1, $2)',
             [username, password_hash]
@@ -49,18 +47,17 @@ app.post('/api/register', async (req, res) => {
     }
 });
 
-// Login User (PostgreSQL syntax: $1)
+
 app.post('/api/login', async (req, res) => {
     const { username, password } = req.body;
     try {
         const users = await pool.query('SELECT id, password_hash FROM users WHERE username = $1', [username]);
         
-        // CORRECTION: Check the .rows property for length
         if (users.rows.length === 0) {
             return res.status(400).json({ message: 'Invalid Credentials' });
         }
 
-        // CORRECTION: Access user data via .rows[0]
+        
         const user = users.rows[0]; 
         
         const isMatch = await bcrypt.compare(password, user.password_hash);
@@ -86,9 +83,7 @@ app.post('/api/login', async (req, res) => {
 });
 
 
-// --- 3. Core API Routes (Protected and Personalized Endpoints) ---
 
-// 3.1. Shorten Link Endpoint 
 app.post('/api/shorten', auth, async (req, res) => { 
     const { longUrl } = req.body;
     const userId = req.user.id; 
@@ -100,7 +95,7 @@ app.post('/api/shorten', auth, async (req, res) => {
     try {
         const shortCode = generateShortCode();
 
-        // SQL CHANGE: Inserting the user_id (PostgreSQL syntax: $1, $2, $3)
+
         await pool.query(
             'INSERT INTO links (short_code, long_url, user_id) VALUES ($1, $2, $3)',
             [shortCode, longUrl, userId] 
@@ -118,12 +113,12 @@ app.post('/api/shorten', auth, async (req, res) => {
 });
 
 
-// 3.2. Get All Links Endpoint (Dashboard Data)
+
 app.get('/api/links', auth, async (req, res) => { 
     const userId = req.user.id; 
 
     try {
-        // SQL CHANGE: Using WHERE clause to filter by user_id (PostgreSQL syntax: $1)
+
         const links = await pool.query(
             'SELECT short_code, long_url, click_count FROM links WHERE user_id = $1 ORDER BY created_at DESC',
             [userId] 
@@ -136,14 +131,12 @@ app.get('/api/links', auth, async (req, res) => {
 });
 
 
-// --- 4. Redirect Route (Generic Endpoint - MUST BE LAST) ---
 
-// 4.1. Redirect and Analytics Endpoint 
 app.get('/:shortCode', async (req, res) => {
     const { shortCode } = req.params;
 
     try {
-        // 1. Find the link (PostgreSQL syntax: $1)
+       
         const links = await pool.query(
             'SELECT long_url FROM links WHERE short_code = $1',
             [shortCode]
@@ -155,13 +148,13 @@ app.get('/:shortCode', async (req, res) => {
 
         const longUrl = links.rows[0].long_url;
 
-        // 2. Increment the click count (Analytics - PostgreSQL syntax: $1)
+       
         await pool.query(
             'UPDATE links SET click_count = click_count + 1 WHERE short_code = $1',
             [shortCode]
         );
 
-        // 3. Redirect the user
+        
         res.redirect(longUrl);
 
     } catch (error) {
@@ -171,7 +164,7 @@ app.get('/:shortCode', async (req, res) => {
 });
 
 
-// --- 5. Start Server ---
+
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

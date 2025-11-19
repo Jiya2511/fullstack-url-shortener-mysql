@@ -1,13 +1,13 @@
-// client/src/App.js (NEW PARENT COMPONENT)
+
 import React, { useState, useEffect } from 'react';
-import Auth from './Auth'; // We will create this
-import Dashboard from './Dashboard'; // We will create this
+import Auth from './Auth'; 
+import Dashboard from './Dashboard'; 
 import './App.css'; 
 
 function App() {
-    // Global State for Authentication
+    
     const [token, setToken] = useState(localStorage.getItem('token'));
-    const [view, setView] = useState(token ? 'dashboard' : 'login'); // Switch based on token
+    const [view, setView] = useState(token ? 'dashboard' : 'login'); 
 
     const handleLogin = (jwtToken) => {
         localStorage.setItem('token', jwtToken);
